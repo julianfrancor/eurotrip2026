@@ -2,785 +2,421 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eurotrip Abril 2026 - Mapa Interactivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Eurotrip Abril 2026 - Portugal Profundo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #e0e0e0; }
-
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #fafafa; color: #1a1a1a; }
   #map { width: 100%; height: 100vh; }
 
-  /* ===== SIDEBAR ===== */
   .sidebar {
     position: fixed; top: 0; left: 0; width: 380px; height: 100vh;
-    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px);
-    z-index: 1000; overflow-y: auto; border-right: 1px solid #333;
-    transition: transform 0.3s ease;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+    z-index: 1000; overflow-y: auto; border-right: 1px solid #e0e0e0;
+    transition: transform 0.3s ease; box-shadow: 2px 0 20px rgba(0,0,0,0.08);
   }
   .sidebar.hidden { transform: translateX(-380px); }
-
   .sidebar-header {
-    padding: 20px; background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10;
+    padding: 20px; background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 10;
   }
   .sidebar-header h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
-  .sidebar-header p { font-size: 12px; color: #888; }
+  .sidebar-header p { font-size: 12px; color: rgba(255,255,255,0.7); }
 
   .toggle-btn {
     position: fixed; top: 15px; left: 15px; z-index: 1001;
-    background: #1a1a2e; color: #fff; border: 1px solid #444;
+    background: #fff; color: #333; border: 1px solid #ddd;
     padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
-    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
-  .toggle-btn:hover { background: #2a2a4e; }
+  .toggle-btn:hover { background: #f5f5f5; }
   .sidebar:not(.hidden) ~ .toggle-btn { left: 395px; }
 
   .stop-card {
-    padding: 16px 20px; border-bottom: 1px solid #222; cursor: pointer;
+    padding: 14px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
     transition: background 0.2s;
   }
-  .stop-card:hover { background: rgba(255,255,255,0.05); }
-  .stop-card.active { background: rgba(99, 102, 241, 0.15); border-left: 3px solid #6366f1; }
+  .stop-card:hover { background: #f8f7ff; }
+  .stop-card.active { background: #ede9fe; border-left: 3px solid #6366f1; }
   .stop-card.visited { opacity: 0.5; }
   .stop-card.visited .stop-number::after {
-    content: '✓'; position: absolute; top: -4px; right: -4px;
-    font-size: 10px; background: #10b981; width: 14px; height: 14px;
+    content: '\2713'; position: absolute; top: -4px; right: -4px;
+    font-size: 9px; background: #10b981; color: #fff; width: 13px; height: 13px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
   }
-
-  .stop-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .stop-header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
   .stop-number {
-    width: 28px; height: 28px; border-radius: 50%; display: flex;
-    align-items: center; justify-content: center; font-size: 12px;
+    width: 26px; height: 26px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 11px;
     font-weight: 700; color: #fff; flex-shrink: 0; position: relative;
   }
-  .stop-name { font-size: 15px; font-weight: 600; color: #fff; }
-  .stop-dates { font-size: 12px; color: #888; margin-left: 38px; }
-  .stop-nights { font-size: 11px; color: #6366f1; margin-left: 38px; font-weight: 600; }
-  .stop-highlights { font-size: 12px; color: #aaa; margin-left: 38px; margin-top: 6px; line-height: 1.5; }
-  .stop-transport { font-size: 11px; color: #f59e0b; margin-left: 38px; margin-top: 4px; }
+  .stop-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .stop-dates { font-size: 11px; color: #888; margin-left: 36px; }
+  .stop-nights { font-size: 11px; color: #6366f1; margin-left: 36px; font-weight: 600; }
+  .stop-highlights { font-size: 11px; color: #666; margin-left: 36px; margin-top: 4px; line-height: 1.4; }
+  .stop-transport { font-size: 10px; color: #b45309; margin-left: 36px; margin-top: 2px; }
 
   .stats-bar {
-    display: flex; justify-content: space-around; padding: 14px 20px;
-    background: #1a1a1a; border-bottom: 1px solid #333;
+    display: flex; justify-content: space-around; padding: 12px 20px;
+    background: #f9fafb; border-bottom: 1px solid #e5e7eb;
   }
   .stat { text-align: center; }
-  .stat-value { font-size: 20px; font-weight: 700; color: #6366f1; }
-  .stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-value { font-size: 18px; font-weight: 700; color: #6366f1; }
+  .stat-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
 
   .event-badge {
-    display: inline-block; background: #f59e0b; color: #000;
-    font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
-    margin-left: 6px; vertical-align: middle;
+    display: inline-block; background: #f59e0b; color: #fff;
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+    margin-left: 5px; vertical-align: middle;
   }
 
-  /* ===== PLAYER CONTROLS ===== */
   .player-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
-    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(12px);
-    border-top: 1px solid #333; padding: 0;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+    border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
   }
   .player-inner {
-    max-width: 900px; margin: 0 auto; padding: 14px 24px;
-    display: flex; align-items: center; gap: 16px;
+    max-width: 900px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; gap: 14px;
   }
   .player-btn {
-    width: 44px; height: 44px; border-radius: 50%; border: 2px solid #6366f1;
-    background: transparent; color: #6366f1; font-size: 18px;
+    width: 42px; height: 42px; border-radius: 50%; border: 2px solid #6366f1;
+    background: transparent; color: #6366f1; font-size: 16px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: all 0.2s; flex-shrink: 0;
   }
-  .player-btn:hover { background: #6366f1; color: #fff; }
-  .player-btn.active { background: #6366f1; color: #fff; }
-  .player-btn.skip { width: 34px; height: 34px; font-size: 14px; border-color: #555; color: #888; }
+  .player-btn:hover, .player-btn.active { background: #6366f1; color: #fff; }
+  .player-btn.skip { width: 32px; height: 32px; font-size: 12px; border-color: #ccc; color: #999; }
   .player-btn.skip:hover { border-color: #6366f1; color: #6366f1; }
 
   .progress-area { flex: 1; }
-  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .now-playing { font-size: 13px; color: #fff; font-weight: 600; }
-  .now-playing .emoji { margin-right: 6px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .now-playing { font-size: 12px; color: #1a1a1a; font-weight: 600; }
   .day-counter { font-size: 11px; color: #6366f1; font-weight: 600; }
-
-  .progress-track {
-    width: 100%; height: 6px; background: #333; border-radius: 3px;
-    cursor: pointer; position: relative;
-  }
-  .progress-fill {
-    height: 100%; background: linear-gradient(90deg, #6366f1, #a78bfa);
-    border-radius: 3px; transition: width 0.3s ease; position: relative;
-  }
-  .progress-thumb {
-    position: absolute; right: -6px; top: -3px;
-    width: 12px; height: 12px; border-radius: 50%;
-    background: #fff; box-shadow: 0 0 6px rgba(99,102,241,0.6);
-  }
-  .progress-stops {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    display: flex; align-items: center;
-  }
-  .progress-dot {
-    position: absolute; width: 8px; height: 8px; border-radius: 50%;
-    background: #555; border: 1px solid #222; transform: translateX(-50%);
-    transition: background 0.3s;
-  }
+  .progress-track { width: 100%; height: 5px; background: #e5e7eb; border-radius: 3px; cursor: pointer; position: relative; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a78bfa); border-radius: 3px; transition: width 0.3s; position: relative; }
+  .progress-thumb { position: absolute; right: -5px; top: -3px; width: 11px; height: 11px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 4px rgba(99,102,241,0.4); }
+  .progress-stops { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+  .progress-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; border: 1px solid #fff; transform: translateX(-50%); transition: background 0.3s; }
   .progress-dot.reached { background: #a78bfa; }
 
   .speed-btn {
-    background: #222; color: #aaa; border: 1px solid #444;
-    padding: 4px 10px; border-radius: 12px; font-size: 11px;
+    background: #f3f4f6; color: #666; border: 1px solid #ddd;
+    padding: 3px 9px; border-radius: 10px; font-size: 10px;
     cursor: pointer; font-weight: 600; flex-shrink: 0;
   }
-  .speed-btn:hover { color: #fff; border-color: #6366f1; }
+  .speed-btn:hover { color: #6366f1; border-color: #6366f1; }
 
-  /* ===== INFO CARD (floating on map) ===== */
   .info-card {
     position: fixed; top: 80px; right: 20px; z-index: 999;
-    width: 320px; background: rgba(15, 15, 15, 0.92); backdrop-filter: blur(12px);
-    border: 1px solid #333; border-radius: 14px; overflow: hidden;
+    width: 310px; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    border: 1px solid #e0e0e0; border-radius: 14px; overflow: hidden;
     transition: all 0.4s ease; opacity: 0; transform: translateY(-10px);
-    pointer-events: none;
+    pointer-events: none; box-shadow: 0 4px 24px rgba(0,0,0,0.1);
   }
   .info-card.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-  .info-card-header {
-    padding: 14px 18px; display: flex; align-items: center; gap: 12px;
-  }
-  .info-card-icon {
-    width: 44px; height: 44px; border-radius: 12px; display: flex;
-    align-items: center; justify-content: center; font-size: 22px;
-  }
-  .info-card-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .info-card-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+  .info-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .info-card-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
   .info-card-sub { font-size: 11px; color: #888; }
-  .info-card-body { padding: 0 18px 14px; }
-  .info-card-row { font-size: 12px; color: #ccc; margin-bottom: 4px; line-height: 1.5; }
-  .info-card-row b { color: #f59e0b; font-weight: 600; }
-  .info-card-highlights {
-    margin-top: 8px; padding: 10px 12px; background: rgba(255,255,255,0.04);
-    border-radius: 8px; font-size: 12px; color: #aaa; line-height: 1.6;
-  }
-  .info-card-activity {
-    display: inline-block; background: rgba(99,102,241,0.15); color: #a78bfa;
-    padding: 2px 8px; border-radius: 6px; font-size: 11px; margin: 2px 3px 2px 0;
-  }
+  .info-card-body { padding: 0 16px 12px; }
+  .info-card-row { font-size: 11px; color: #555; margin-bottom: 3px; line-height: 1.4; }
+  .info-card-row b { color: #b45309; font-weight: 600; }
+  .info-card-highlights { margin-top: 6px; padding: 8px 10px; background: #f9fafb; border-radius: 8px; font-size: 11px; color: #666; line-height: 1.5; }
+  .info-card-activity { display: inline-block; background: #ede9fe; color: #6366f1; padding: 2px 7px; border-radius: 5px; font-size: 10px; margin: 2px 2px 2px 0; }
 
-  /* ===== POPUPS ===== */
-  .leaflet-popup-content-wrapper {
-    background: #1a1a2e !important; color: #e0e0e0 !important;
-    border-radius: 10px !important; border: 1px solid #333 !important;
-  }
-  .leaflet-popup-tip { background: #1a1a2e !important; }
-  .leaflet-popup-content { font-family: 'Segoe UI', system-ui, sans-serif; }
-  .popup-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-  .popup-dates { font-size: 12px; color: #6366f1; margin-bottom: 8px; }
-  .popup-text { font-size: 12px; color: #ccc; line-height: 1.6; }
-  .popup-text b { color: #f59e0b; }
+  .leaflet-popup-content-wrapper { background: #fff !important; color: #1a1a1a !important; border-radius: 10px !important; border: 1px solid #e0e0e0 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important; }
+  .leaflet-popup-tip { background: #fff !important; }
+  .popup-title { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .popup-dates { font-size: 11px; color: #6366f1; margin-bottom: 6px; }
+  .popup-text { font-size: 11px; color: #555; line-height: 1.5; }
+  .popup-text b { color: #b45309; }
 
-  /* ===== LEGEND ===== */
   .legend {
-    position: fixed; bottom: 85px; right: 20px; z-index: 1000;
-    background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(10px);
-    padding: 12px 16px; border-radius: 10px; border: 1px solid #333;
-    font-size: 11px;
+    position: fixed; bottom: 80px; right: 20px; z-index: 1000;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+    padding: 10px 14px; border-radius: 10px; border: 1px solid #e0e0e0;
+    font-size: 10px; color: #555; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   }
-  .legend-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
 
-  /* ===== TRAVELER trail ===== */
-  .trail-glow {
-    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
+  /* Mobile responsive */
+  @media (max-width: 600px) {
+    .sidebar {
+      width: 100vw; height: 55vh; top: auto; bottom: 0;
+      border-right: none; border-top: 1px solid #e0e0e0;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      transform: translateY(calc(55vh - 54px));
+      transition: transform 0.3s ease;
+    }
+    .sidebar.expanded { transform: translateY(0); }
+    .sidebar.hidden { transform: translateY(100%); }
+    .sidebar-header {
+      padding: 14px 20px; border-radius: 18px 18px 0 0; cursor: pointer;
+    }
+    .sidebar-header::before {
+      content: ''; display: block; width: 36px; height: 4px;
+      background: rgba(255,255,255,0.4); border-radius: 2px;
+      margin: 0 auto 10px;
+    }
+    .sidebar-header h1 { font-size: 16px; }
+    .toggle-btn { display: none; }
+    .stats-bar { padding: 8px 16px; }
+    .stat-value { font-size: 15px; }
+    .stat-label { font-size: 8px; }
+    .stop-card { padding: 10px 16px; }
+    .stop-name { font-size: 13px; }
+
+    .info-card {
+      top: auto; right: 8px; left: 8px; bottom: 70px;
+      width: auto; max-width: 100%;
+    }
+
+    .player-bar { z-index: 1002; }
+    .player-inner { padding: 10px 14px; gap: 10px; }
+    .player-btn { width: 36px; height: 36px; font-size: 14px; }
+    .player-btn.skip { width: 28px; height: 28px; font-size: 10px; }
+    .now-playing { font-size: 11px; }
+    .day-counter { font-size: 10px; }
+
+    .legend { bottom: 70px; right: 8px; padding: 6px 10px; font-size: 9px; }
+    .legend-item { gap: 4px; margin: 2px 0; }
+    .legend-dot { width: 7px; height: 7px; }
+
+    #map { height: 100vh; height: 100dvh; }
   }
 </style>
 </head>
 <body>
-
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
+  <div class="sidebar-header" onclick="if(window.innerWidth<=600)toggleSidebar()">
     <h1>Eurotrip Abril 2026</h1>
-    <p>Solo Backpacker &middot; 28 dias &middot; 4 paises</p>
+    <p>Solo Backpacker &middot; 28 dias &middot; Portugal Profundo</p>
   </div>
   <div class="stats-bar">
     <div class="stat"><div class="stat-value">28</div><div class="stat-label">Dias</div></div>
-    <div class="stat"><div class="stat-value">8</div><div class="stat-label">Ciudades</div></div>
-    <div class="stat"><div class="stat-value">4</div><div class="stat-label">Paises</div></div>
+    <div class="stat"><div class="stat-value">10</div><div class="stat-label">Paradas</div></div>
+    <div class="stat"><div class="stat-value">3</div><div class="stat-label">Paises</div></div>
     <div class="stat"><div class="stat-value">~$2k</div><div class="stat-label">Budget</div></div>
   </div>
-  <div id="stops-list" style="position: relative;"></div>
+  <div id="stops-list"></div>
 </div>
-
 <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()">&#9776;</button>
-
 <div id="map"></div>
-
-<!-- Info card -->
 <div class="info-card" id="infoCard"></div>
-
-<!-- Legend -->
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Espana</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Portugal continental</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Portugal norte/centro</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Douro Valley</div>
   <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Madeira</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Paises Bajos</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> Algarve (sur)</div>
 </div>
-
-<!-- Player bar -->
 <div class="player-bar">
   <div class="player-inner">
-    <button class="player-btn skip" id="prevBtn" onclick="skipStop(-1)" title="Anterior">&#9664;&#9664;</button>
-    <button class="player-btn" id="playBtn" onclick="togglePlay()" title="Play / Pausa">&#9654;</button>
-    <button class="player-btn skip" id="nextBtn" onclick="skipStop(1)" title="Siguiente">&#9654;&#9654;</button>
-
+    <button class="player-btn skip" onclick="skipStop(-1)">&#9664;&#9664;</button>
+    <button class="player-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+    <button class="player-btn skip" onclick="skipStop(1)">&#9654;&#9654;</button>
     <div class="progress-area">
       <div class="progress-top">
-        <div class="now-playing" id="nowPlaying"><span class="emoji">🧳</span> Dale play para empezar el viaje</div>
+        <div class="now-playing" id="nowPlaying">&#x1f9f3; Dale play para empezar el viaje</div>
         <div class="day-counter" id="dayCounter">Dia 0 / 28</div>
       </div>
-      <div class="progress-track" id="progressTrack" onclick="seekProgress(event)">
-        <div class="progress-fill" id="progressFill" style="width: 0%">
-          <div class="progress-thumb"></div>
-        </div>
+      <div class="progress-track" onclick="seekProgress(event)">
+        <div class="progress-fill" id="progressFill" style="width:0%"><div class="progress-thumb"></div></div>
         <div class="progress-stops" id="progressStops"></div>
       </div>
     </div>
-
     <button class="speed-btn" id="speedBtn" onclick="cycleSpeed()">1x</button>
   </div>
 </div>
 
 <script>
-// ===== DATA =====
-const stops = [
-  {
-    id: 1, name: "Madrid", country: "Espana", color: "#ef4444", emoji: "🇪🇸",
-    lat: 40.4168, lng: -3.7038, startDay: 1,
-    dates: "Abr 3-5", nights: 2, transport: "Vuelo desde Medellin (~10h)",
-    highlights: ["Templo de Debod al sunset", "Prado gratis 18-20h", "Tapas en La Latina", "Churros San Gines"],
-    hostel: "The Hat Madrid (~30 EUR/noche)",
-    activities: ["🏛️ Museos", "🍷 Tapas", "🌅 Sunset"],
-    zoom: 12,
-    // Points of interest the traveler "visits" within the city
-    pois: [
-      { name: "Aeropuerto Barajas", lat: 40.4722, lng: -3.5608 },
-      { name: "Puerta del Sol", lat: 40.4169, lng: -3.7035 },
-      { name: "Templo de Debod", lat: 40.4238, lng: -3.7178 },
-      { name: "Retiro", lat: 40.4153, lng: -3.6845 },
-      { name: "La Latina - Tapas", lat: 40.4112, lng: -3.7105 },
-    ]
+var stops = [
+  { id:1, name:"Madrid", country:"Espana", color:"#ef4444", emoji:"\ud83c\uddea\ud83c\uddf8",
+    lat:40.4168, lng:-3.7038, startDay:1, dates:"Abr 3-5", nights:2,
+    transport:"Vuelo desde Medellin (~10h)",
+    highlights:["Templo de Debod al sunset","Prado gratis 18-20h","Tapas La Latina","Churros San Gines"],
+    hostel:"The Hat Madrid (~30 EUR)", activities:["\ud83c\udfdb\ufe0f Museos","\ud83c\udf77 Tapas","\ud83c\udf05 Sunset"], zoom:12,
+    pois:[{name:"Puerta del Sol",lat:40.4169,lng:-3.7035},{name:"Templo de Debod",lat:40.4238,lng:-3.7178},{name:"Retiro",lat:40.4153,lng:-3.6845},{name:"La Latina",lat:40.4112,lng:-3.7105}]
   },
-  {
-    id: 2, name: "Lisboa", country: "Portugal", color: "#3b82f6", emoji: "🇵🇹",
-    lat: 38.7223, lng: -9.1393, startDay: 3,
-    dates: "Abr 5-11", nights: 6, transport: "Vuelo low-cost (~25-50 EUR, 1.5h)",
-    highlights: ["Alfama y miradores", "Tram 28", "Fado en vivo", "LX Factory", "Pasteis de Belem"],
-    hostel: "Home Lisbon Hostel (~30 EUR/noche, cenas gratis!)",
-    activities: ["🎵 Fado", "🍰 Pasteis", "🌉 Miradores", "🏄 Sintra trip"],
-    zoom: 13,
-    pois: [
-      { name: "Baixa - Praca do Comercio", lat: 38.7075, lng: -9.1365 },
-      { name: "Alfama", lat: 38.7117, lng: -9.1302 },
-      { name: "Miradouro da Graca", lat: 38.7187, lng: -9.1312 },
-      { name: "Belem - Pasteis", lat: 38.6975, lng: -9.2030 },
-      { name: "LX Factory", lat: 38.7035, lng: -9.1782 },
-      { name: "Bairro Alto (noche)", lat: 38.7139, lng: -9.1453 },
-    ]
+  { id:2, name:"Lisboa", country:"Portugal", color:"#3b82f6", emoji:"\ud83c\uddf5\ud83c\uddf9",
+    lat:38.7223, lng:-9.1393, startDay:3, dates:"Abr 5-11", nights:6,
+    transport:"Vuelo low-cost (~30 EUR, 1.5h)",
+    highlights:["Alfama y miradores","Tram 28","Fado en vivo","LX Factory","Pasteis de Belem","Sintra day trip"],
+    hostel:"Home Lisbon Hostel (~30 EUR, cenas gratis!)", activities:["\ud83c\udfb5 Fado","\ud83c\udf70 Pasteis","\ud83c\udf09 Miradores","\ud83c\udff0 Sintra"], zoom:13,
+    pois:[{name:"Praca do Comercio",lat:38.7075,lng:-9.1365},{name:"Alfama",lat:38.7117,lng:-9.1302},{name:"Miradouro da Graca",lat:38.7187,lng:-9.1312},{name:"Belem",lat:38.6975,lng:-9.2030},{name:"LX Factory",lat:38.7035,lng:-9.1782},{name:"Bairro Alto",lat:38.7139,lng:-9.1453}]
   },
-  {
-    id: 3, name: "Ericeira", country: "Portugal", color: "#3b82f6", emoji: "🏄",
-    lat: 38.9626, lng: -9.4158, startDay: 9,
-    dates: "Abr 11-14", nights: 3, transport: "Bus desde Lisboa (~1h, ~8 EUR)",
-    highlights: ["Surf (World Surfing Reserve)", "Acantilados", "Pueblo pesquero", "Sunset con cerveza"],
-    hostel: "Ericeira Chill Hill (~22 EUR/noche)",
-    activities: ["🏄 Surf", "🌊 Cliffs", "🍺 Chill"],
-    zoom: 14,
-    pois: [
-      { name: "Centro - Puerto", lat: 38.9629, lng: -9.4181 },
-      { name: "Ribeira d'Ilhas", lat: 38.9833, lng: -9.4200 },
-      { name: "Foz do Lizandro (surf)", lat: 38.9486, lng: -9.4260 },
-    ]
+  { id:3, name:"Ericeira", country:"Portugal", color:"#3b82f6", emoji:"\ud83c\udfc4",
+    lat:38.9626, lng:-9.4158, startDay:9, dates:"Abr 11-13", nights:2,
+    transport:"Bus Mafrense (~1h, ~8 EUR)",
+    highlights:["World Surfing Reserve","Surf en Foz do Lizandro","Acantilados","Pueblo pesquero","Sunset con cerveza"],
+    hostel:"Ericeira Chill Hill (~30 EUR)", activities:["\ud83c\udfc4 Surf","\ud83c\udf0a Cliffs","\ud83c\udf1f Pueblo","\ud83c\udf05 Sunset"], zoom:14,
+    pois:[{name:"Centro - Puerto",lat:38.9629,lng:-9.4181},{name:"Ribeira d'Ilhas",lat:38.9833,lng:-9.4200},{name:"Foz do Lizandro",lat:38.9486,lng:-9.4260}]
   },
-  {
-    id: 4, name: "Peniche / Baleal", country: "Portugal", color: "#3b82f6", emoji: "🏝️",
-    lat: 39.3558, lng: -9.3817, startDay: 12,
-    dates: "Abr 14-16", nights: 2, transport: "Bus via Lisboa (~2-3h)",
-    highlights: ["Surf en Baleal", "Islas Berlengas", "Cabo Carvoeiro", "Supertubos"],
-    hostel: "Baleal Surf Camp (~25 EUR/noche)",
-    activities: ["🏄 Surf", "⛵ Berlengas", "🌅 Cliffs"],
-    zoom: 13,
-    pois: [
-      { name: "Baleal (istmo)", lat: 39.3723, lng: -9.3400 },
-      { name: "Fortaleza de Peniche", lat: 39.3550, lng: -9.3770 },
-      { name: "Cabo Carvoeiro", lat: 39.3486, lng: -9.4071 },
-    ]
+  { id:4, name:"Peniche / Baleal", country:"Portugal", color:"#3b82f6", emoji:"\ud83c\udfd6\ufe0f",
+    lat:39.3558, lng:-9.3817, startDay:11, dates:"Abr 13-14", nights:1,
+    transport:"Bus via Lisboa (~2-3h)",
+    highlights:["Surf en Baleal","Islas Berlengas","Cabo Carvoeiro","Supertubos"],
+    hostel:"Baleal Hostel (~30 EUR)", activities:["\ud83c\udfc4 Surf","\u26f5 Berlengas","\ud83c\udf05 Cabo"], zoom:13,
+    pois:[{name:"Baleal (istmo)",lat:39.3723,lng:-9.3400},{name:"Fortaleza",lat:39.3550,lng:-9.3770},{name:"Cabo Carvoeiro",lat:39.3486,lng:-9.4071}]
   },
-  {
-    id: 5, name: "Porto", country: "Portugal", color: "#3b82f6", emoji: "🍷",
-    lat: 41.1579, lng: -8.6291, startDay: 14,
-    dates: "Abr 16-20", nights: 4, transport: "Bus Rede Expressos (~3.5h, ~18 EUR)",
-    highlights: ["Vino de Oporto en Gaia", "Puente Dom Luis I", "Francesinha", "Livraria Lello", "Douro Valley"],
-    hostel: "Gallery Hostel Porto (~25 EUR/noche)",
-    activities: ["🍷 Port wine", "📚 Lello", "🌉 Dom Luis", "🚂 Douro"],
-    zoom: 13,
-    pois: [
-      { name: "Sao Bento (azulejos)", lat: 41.1455, lng: -8.6104 },
-      { name: "Livraria Lello", lat: 41.1468, lng: -8.6155 },
-      { name: "Ribeira", lat: 41.1410, lng: -8.6130 },
-      { name: "Vila Nova de Gaia (vino)", lat: 41.1365, lng: -8.6120 },
-      { name: "Galerias de Paris (noche)", lat: 41.1470, lng: -8.6130 },
-    ]
+  { id:5, name:"Porto", country:"Portugal", color:"#3b82f6", emoji:"\ud83c\udf77",
+    lat:41.1579, lng:-8.6291, startDay:12, dates:"Abr 14-17", nights:3,
+    transport:"Bus Rede Expressos (~3.5h, ~18 EUR)",
+    highlights:["Vino Oporto en Gaia","Puente Dom Luis I","Francesinha","Livraria Lello","Galerias de Paris"],
+    hostel:"Gallery Hostel Porto (~25 EUR)", activities:["\ud83c\udf77 Port wine","\ud83d\udcda Lello","\ud83c\udf09 Dom Luis","\ud83c\udf1f Nightlife"], zoom:13,
+    pois:[{name:"Sao Bento",lat:41.1455,lng:-8.6104},{name:"Livraria Lello",lat:41.1468,lng:-8.6155},{name:"Ribeira",lat:41.1410,lng:-8.6130},{name:"Gaia (vino)",lat:41.1365,lng:-8.6120},{name:"Galerias de Paris",lat:41.1470,lng:-8.6130}]
   },
-  {
-    id: 6, name: "Madeira", country: "Portugal", color: "#10b981", emoji: "🌿",
-    lat: 32.6669, lng: -16.9241, startDay: 18,
-    dates: "Abr 20-24", nights: 4, transport: "Vuelo desde Porto (~2h, ~40-80 EUR)",
-    highlights: ["Levada Caldeirao Verde", "Levada 25 Fontes", "Pico do Arieiro", "Canyoning", "Poncha"],
-    hostel: "Santa Maria Hostel (~22 EUR/noche)",
-    activities: ["🥾 Levadas", "🧗 Canyoning", "🍹 Poncha", "🌋 Pico"],
-    zoom: 10,
-    pois: [
-      { name: "Funchal - Zona Velha", lat: 32.6478, lng: -16.9050 },
-      { name: "Mercado dos Lavradores", lat: 32.6487, lng: -16.9037 },
-      { name: "Levada 25 Fontes", lat: 32.7614, lng: -17.0841 },
-      { name: "Pico do Arieiro", lat: 32.7358, lng: -16.9281 },
-      { name: "Ponta de Sao Lourenco", lat: 32.7417, lng: -16.6983 },
-    ]
+  { id:6, name:"Douro Valley", country:"Portugal", color:"#8b5cf6", emoji:"\ud83c\udf47",
+    lat:41.1886, lng:-7.5454, startDay:15, dates:"Abr 17-19", nights:2,
+    transport:"Tren desde Porto (~3h, ~14 EUR)",
+    highlights:["Vinedos UNESCO en terrazas","Quintas con catas","Paseo en barco","Pinhao azulejos","Caminar entre vinedos"],
+    hostel:"Hostel Douro Pinhao / Quinta (~30-50 EUR)", activities:["\ud83c\udf47 Quintas","\ud83d\udea3 Barco","\ud83d\udeb6 Vinedos","\ud83c\udf77 Catas"], zoom:12,
+    pois:[{name:"Pinhao (estacion)",lat:41.1886,lng:-7.5454},{name:"Peso da Regua",lat:41.1620,lng:-7.7920},{name:"Miradouro S.Leonardo",lat:41.1750,lng:-7.6800}]
   },
-  {
-    id: 7, name: "Lisboa (vuelta)", country: "Portugal", color: "#3b82f6", emoji: "🌹",
-    lat: 38.7253, lng: -9.1500, startDay: 22,
-    dates: "Abr 24-26", nights: 2, transport: "Vuelo desde Funchal (~1.5h, ~40 EUR)",
-    highlights: ["25 de Abril: Revolucion de los Claveles", "Claveles rojos", "Marchas", "Conciertos gratis"],
-    hostel: "Home Lisbon Hostel",
-    event: "25 ABR",
-    activities: ["🌹 Revolucion", "🎶 Conciertos", "🛍️ Compras"],
-    zoom: 13,
-    pois: [
-      { name: "Av. da Liberdade (marcha)", lat: 38.7207, lng: -9.1457 },
-      { name: "Praca do Comercio (concierto)", lat: 38.7075, lng: -9.1365 },
-      { name: "Loja das Conservas", lat: 38.7082, lng: -9.1416 },
-    ]
+  { id:7, name:"Madeira", country:"Portugal", color:"#10b981", emoji:"\ud83c\udf3f",
+    lat:32.6669, lng:-16.9241, startDay:17, dates:"Abr 19-24", nights:5,
+    transport:"Vuelo desde Porto (~2h, ~50 EUR)",
+    highlights:["Levada Caldeirao Verde","Levada 25 Fontes","Pico do Arieiro","Canyoning","Poncha"],
+    hostel:"On Track Funchal (~25 EUR)", activities:["\ud83e\uddb6 Levadas","\ud83e\uddd7 Canyoning","\ud83c\udf79 Poncha","\ud83c\udf0b Pico"], zoom:10,
+    pois:[{name:"Funchal - Zona Velha",lat:32.6478,lng:-16.9050},{name:"Mercado dos Lavradores",lat:32.6487,lng:-16.9037},{name:"Levada 25 Fontes",lat:32.7614,lng:-17.0841},{name:"Pico do Arieiro",lat:32.7358,lng:-16.9281},{name:"Ponta de Sao Lourenco",lat:32.7417,lng:-16.6983}]
   },
-  {
-    id: 8, name: "Amsterdam", country: "Paises Bajos", color: "#f59e0b", emoji: "🧡",
-    lat: 52.3676, lng: 4.9041, startDay: 24,
-    dates: "Abr 26-28", nights: 2, transport: "Vuelo desde Lisboa (~3h)",
-    highlights: ["KINGSDAY 27 Abr", "Ciudad naranja", "Vrijmarkt", "Fiestas en barcos", "Jordaan"],
-    hostel: "ClinkNOORD / Flying Pig (~40 EUR/noche)",
-    event: "KINGSDAY",
-    activities: ["🧡 Kingsday", "🚤 Canales", "🛒 Vrijmarkt", "🍺 Party"],
-    zoom: 13,
-    pois: [
-      { name: "Centraal Station", lat: 52.3791, lng: 4.9003 },
-      { name: "Jordaan (fiesta local)", lat: 52.3749, lng: 4.8816 },
-      { name: "Vondelpark", lat: 52.3580, lng: 4.8686 },
-      { name: "Prinsengracht (barcos)", lat: 52.3667, lng: 4.8835 },
-      { name: "Museumplein (escenarios)", lat: 52.3600, lng: 4.8852 },
-    ]
+  { id:8, name:"Lisboa (vuelta)", country:"Portugal", color:"#3b82f6", emoji:"\ud83c\udf39",
+    lat:38.7253, lng:-9.1500, startDay:22, dates:"Abr 24-26", nights:2,
+    transport:"Vuelo desde Funchal (~1.5h, ~45 EUR)",
+    highlights:["25 de Abril: Revolucion de los Claveles","Claveles rojos","Marchas","Conciertos gratis"],
+    hostel:"Home Lisbon Hostel", event:"25 ABR",
+    activities:["\ud83c\udf39 Revolucion","\ud83c\udfb6 Conciertos","\ud83d\udecd\ufe0f Compras"], zoom:13,
+    pois:[{name:"Av. da Liberdade (marcha)",lat:38.7207,lng:-9.1457},{name:"Praca do Comercio",lat:38.7075,lng:-9.1365},{name:"Loja das Conservas",lat:38.7082,lng:-9.1416}]
   },
-  {
-    id: 9, name: "Madrid (cierre)", country: "Espana", color: "#ef4444", emoji: "✈️",
-    lat: 40.4200, lng: -3.7000, startDay: 26,
-    dates: "Abr 28 - May 1", nights: 3, transport: "Vuelo desde Amsterdam (~2.5h)",
-    highlights: ["Museos pendientes", "Malasana", "Retiro", "Despedida del viaje"],
-    hostel: "The Hat Madrid",
-    activities: ["🏛️ Museos", "🛍️ Malasana", "🌳 Retiro", "✈️ Vuelta"],
-    zoom: 12,
-    pois: [
-      { name: "Malasana", lat: 40.4250, lng: -3.7050 },
-      { name: "Reina Sofia (Guernica)", lat: 40.4087, lng: -3.6937 },
-      { name: "Retiro - despedida", lat: 40.4153, lng: -3.6845 },
-      { name: "Aeropuerto Barajas - adios!", lat: 40.4722, lng: -3.5608 },
-    ]
+  { id:9, name:"Lagos", country:"Portugal", color:"#f97316", emoji:"\ud83c\udfd6\ufe0f",
+    lat:37.1028, lng:-8.6709, startDay:24, dates:"Abr 26-29", nights:3,
+    transport:"Bus desde Lisboa (~3.5h, ~20 EUR)",
+    highlights:["Ponta da Piedade (grutas)","Kayak en cuevas","Praia do Camilo","Surf","Coasteering","Sagres day trip"],
+    hostel:"The Rising Cock (~25 EUR)", activities:["\ud83d\udea3 Kayak","\ud83c\udfc4 Surf","\ud83e\uddd7 Coasteering","\ud83c\udf05 Cliffs"], zoom:13,
+    pois:[{name:"Centro historico",lat:37.1028,lng:-8.6740},{name:"Praia de Dona Ana",lat:37.0908,lng:-8.6724},{name:"Praia do Camilo",lat:37.0878,lng:-8.6703},{name:"Ponta da Piedade",lat:37.0823,lng:-8.6688},{name:"Meia Praia (surf)",lat:37.1120,lng:-8.6520}]
+  },
+  { id:10, name:"Faro / Tavira", country:"Portugal", color:"#f97316", emoji:"\u2708\ufe0f",
+    lat:37.0194, lng:-7.9304, startDay:27, dates:"Abr 29-May 1", nights:2,
+    transport:"Tren desde Lagos (~1.5h, ~8 EUR)",
+    highlights:["Ria Formosa","Ilha Deserta","Faro casco antiguo","Tavira puente romano","Praia do Barril"],
+    hostel:"Casa d'Alagoa Hostel (~24 EUR)", activities:["\ud83c\udfd6\ufe0f Ilha Deserta","\ud83c\udfdb\ufe0f Old town","\ud83d\ude82 Tavira","\u2708\ufe0f Vuelo MAD"], zoom:12,
+    pois:[{name:"Faro - Cidade Velha",lat:37.0146,lng:-7.9352},{name:"Ria Formosa (barcos)",lat:36.9900,lng:-7.9200},{name:"Tavira centro",lat:37.1271,lng:-7.6506},{name:"Aeropuerto FAO",lat:37.0145,lng:-7.9659}]
   }
 ];
 
-const TOTAL_DAYS = 28;
-const speeds = [1, 2, 4, 0.5];
-let speedIdx = 0;
-let isPlaying = false;
-let currentStopIdx = 0;
-let currentPoiIdx = 0;
-let animationTimer = null;
-let travelAnimFrame = null;
+var TOTAL_DAYS = 28, speeds = [1,2,4,0.5], speedIdx = 0;
+var isPlaying = false, currentStopIdx = 0, currentPoiIdx = 0, animationTimer = null, travelAnimFrame = null;
 
-// ===== MAP =====
-const map = L.map('map', { center: [42, -5], zoom: 5, zoomControl: false });
-L.control.zoom({ position: 'topright' }).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
-}).addTo(map);
+var map = L.map('map', {center:[40,-6], zoom:5, zoomControl:false});
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'&copy; OSM &copy; CARTO',maxZoom:19}).addTo(map);
 
-// Route (dashed background)
-const routeCoords = stops.map(s => [s.lat, s.lng]);
-const routeLine = L.polyline(routeCoords, {
-  color: '#6366f1', weight: 2, opacity: 0.3, dashArray: '8, 8'
-}).addTo(map);
+var routeCoords = stops.map(function(s){return [s.lat,s.lng];});
+var routeLine = L.polyline(routeCoords,{color:'#a78bfa',weight:2,opacity:0.25,dashArray:'8,8'}).addTo(map);
 
-// Colored segments (hidden initially, revealed as traveler progresses)
-const routeSegments = [];
-for (let i = 0; i < stops.length - 1; i++) {
-  const seg = L.polyline(
-    [[stops[i].lat, stops[i].lng], [stops[i+1].lat, stops[i+1].lng]],
-    { color: stops[i+1].color, weight: 3.5, opacity: 0, className: 'trail-glow' }
-  ).addTo(map);
+var routeSegments = [];
+for (var i=0;i<stops.length-1;i++){
+  var seg = L.polyline([[stops[i].lat,stops[i].lng],[stops[i+1].lat,stops[i+1].lng]],{color:stops[i+1].color,weight:3.5,opacity:0}).addTo(map);
   routeSegments.push(seg);
 }
 
-// City markers
-const markers = [];
-stops.forEach((stop, idx) => {
-  const size = stop.nights >= 4 ? 36 : stop.nights >= 2 ? 30 : 26;
-  const icon = L.divIcon({
-    className: '',
-    html: `<div style="
-      width: ${size}px; height: ${size}px; border-radius: 50%;
-      background: ${stop.color}22; border: 2px solid ${stop.color}44;
-      display: flex; align-items: center; justify-content: center;
-      font-size: ${size > 30 ? 13 : 11}px; font-weight: 700; color: ${stop.color}88;
-      transition: all 0.5s;
-    " id="marker-inner-${idx}">${stop.id}</div>`,
-    iconSize: [size, size], iconAnchor: [size/2, size/2]
-  });
-
-  const popupContent = `
-    <div class="popup-title">${stop.emoji} ${stop.name}</div>
-    <div class="popup-dates">${stop.dates} &middot; ${stop.nights} noches &middot; ${stop.country}</div>
-    <div class="popup-text">
-      <b>Hostel:</b> ${stop.hostel}<br>
-      <b>Highlights:</b> ${stop.highlights.join(', ')}<br>
-      <b>Transporte:</b> ${stop.transport}
-    </div>`;
-
-  const marker = L.marker([stop.lat, stop.lng], { icon })
-    .addTo(map).bindPopup(popupContent, { maxWidth: 300 });
-  markers.push(marker);
+var markers = [];
+stops.forEach(function(stop,idx){
+  var sz = stop.nights>=4?36:stop.nights>=3?32:stop.nights>=2?28:24;
+  var icon = L.divIcon({className:'',html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+stop.color+'18;border:2px solid '+stop.color+'33;display:flex;align-items:center;justify-content:center;font-size:'+(sz>30?13:11)+'px;font-weight:700;color:'+stop.color+'77;transition:all 0.5s;" id="mi-'+idx+'">'+stop.id+'</div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+  var popup = '<div class="popup-title">'+stop.emoji+' '+stop.name+'</div><div class="popup-dates">'+stop.dates+' &middot; '+stop.nights+' noches</div><div class="popup-text"><b>Hostel:</b> '+stop.hostel+'<br><b>Highlights:</b> '+stop.highlights.join(', ')+'<br><b>Transporte:</b> '+stop.transport+'</div>';
+  markers.push(L.marker([stop.lat,stop.lng],{icon:icon}).addTo(map).bindPopup(popup,{maxWidth:280}));
 });
 
-// ===== TRAVELER (the walking character) =====
-const travelerIcon = L.divIcon({
-  className: '',
-  html: `<div id="traveler" style="
-    font-size: 32px; line-height: 1;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-    transition: transform 0.1s;
-  ">🧑‍🎒</div>`,
-  iconSize: [36, 36], iconAnchor: [18, 18]
-});
-const travelerMarker = L.marker([stops[0].lat, stops[0].lng], {
-  icon: travelerIcon, zIndexOffset: 9999
-}).addTo(map);
+var travelerIcon = L.divIcon({className:'',html:'<div id="traveler" style="font-size:30px;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));transition:transform 0.1s;">\ud83e\uddd1\u200d\ud83c\udf92</div>',iconSize:[34,34],iconAnchor:[17,17]});
+var travelerMarker = L.marker([stops[0].lat,stops[0].lng],{icon:travelerIcon,zIndexOffset:9999}).addTo(map);
+var localTrail = L.polyline([],{color:'#6366f1',weight:2,opacity:0.35,dashArray:'4,6'}).addTo(map);
+var footprints = [];
 
-// Trail line (where the traveler has walked within a city)
-let localTrail = L.polyline([], {
-  color: '#a78bfa', weight: 2, opacity: 0.5, dashArray: '4, 6'
-}).addTo(map);
+var progressStopsEl = document.getElementById('progressStops');
+stops.forEach(function(s){var d=document.createElement('div');d.className='progress-dot';d.style.left=((s.startDay-1)/TOTAL_DAYS*100)+'%';d.title=s.name;progressStopsEl.appendChild(d);});
 
-// Footprint markers
-const footprints = [];
-
-// ===== PROGRESS BAR DOTS =====
-const progressStopsEl = document.getElementById('progressStops');
-stops.forEach((stop, idx) => {
-  const pct = ((stop.startDay - 1) / TOTAL_DAYS) * 100;
-  const dot = document.createElement('div');
-  dot.className = 'progress-dot';
-  dot.style.left = pct + '%';
-  dot.title = stop.name;
-  progressStopsEl.appendChild(dot);
+var listEl=document.getElementById('stops-list'),cards=[];
+stops.forEach(function(stop,idx){
+  var c=document.createElement('div');c.className='stop-card';
+  c.innerHTML='<div class="stop-header"><div class="stop-number" style="background:'+stop.color+'">'+stop.id+'</div><div class="stop-name">'+stop.emoji+' '+stop.name+(stop.event?'<span class="event-badge">'+stop.event+'</span>':'')+'</div></div><div class="stop-dates">'+stop.dates+' &middot; '+stop.country+'</div><div class="stop-nights">'+stop.nights+' noches</div><div class="stop-highlights">'+stop.highlights.join(' &middot; ')+'</div><div class="stop-transport">'+stop.transport+'</div>';
+  c.addEventListener('click',function(){jumpToStop(idx);});listEl.appendChild(c);cards.push(c);
 });
 
-// ===== SIDEBAR =====
-const listEl = document.getElementById('stops-list');
-const cards = [];
-stops.forEach((stop, idx) => {
-  const card = document.createElement('div');
-  card.className = 'stop-card';
-  card.innerHTML = `
-    <div class="stop-header">
-      <div class="stop-number" style="background: ${stop.color}">${stop.id}</div>
-      <div class="stop-name">${stop.emoji} ${stop.name}${stop.event ? `<span class="event-badge">${stop.event}</span>` : ''}</div>
-    </div>
-    <div class="stop-dates">${stop.dates} &middot; ${stop.country}</div>
-    <div class="stop-nights">${stop.nights} noches</div>
-    <div class="stop-highlights">${stop.highlights.join(' &middot; ')}</div>
-    <div class="stop-transport">${stop.transport}</div>`;
-  card.addEventListener('click', () => jumpToStop(idx));
-  listEl.appendChild(card);
-  cards.push(card);
-});
+function showInfoCard(s){var e=document.getElementById('infoCard');e.innerHTML='<div class="info-card-header" style="background:'+s.color+'08;"><div class="info-card-icon" style="background:'+s.color+'12;font-size:26px;">'+s.emoji+'</div><div><div class="info-card-title">'+s.name+'</div><div class="info-card-sub">'+s.dates+' &middot; '+s.nights+' noches &middot; '+s.country+'</div></div></div><div class="info-card-body"><div class="info-card-row"><b>Hostel:</b> '+s.hostel+'</div><div class="info-card-row"><b>Transporte:</b> '+s.transport+'</div><div style="margin-top:6px;">'+s.activities.map(function(a){return'<span class="info-card-activity">'+a+'</span>';}).join('')+'</div><div class="info-card-highlights">'+s.highlights.map(function(h){return'\u2022 '+h;}).join('<br>')+'</div></div>';e.classList.add('show');}
+function activateMarker(i){var e=document.getElementById('mi-'+i);if(e){e.style.background=stops[i].color;e.style.borderColor='#fff';e.style.color='#fff';e.style.boxShadow='0 0 10px '+stops[i].color+'55';}}
+function getInterval(){return 2000/speeds[speedIdx];}
 
-// ===== INFO CARD =====
-function showInfoCard(stop) {
-  const el = document.getElementById('infoCard');
-  el.innerHTML = `
-    <div class="info-card-header" style="background: ${stop.color}15;">
-      <div class="info-card-icon" style="background: ${stop.color}22; font-size: 28px;">${stop.emoji}</div>
-      <div>
-        <div class="info-card-title">${stop.name}</div>
-        <div class="info-card-sub">${stop.dates} &middot; ${stop.nights} noches &middot; ${stop.country}</div>
-      </div>
-    </div>
-    <div class="info-card-body">
-      <div class="info-card-row"><b>Hostel:</b> ${stop.hostel}</div>
-      <div class="info-card-row"><b>Transporte:</b> ${stop.transport}</div>
-      <div style="margin-top: 8px;">
-        ${stop.activities.map(a => `<span class="info-card-activity">${a}</span>`).join('')}
-      </div>
-      <div class="info-card-highlights">
-        ${stop.highlights.map(h => '• ' + h).join('<br>')}
-      </div>
-    </div>`;
-  el.classList.add('show');
+function animateTravel(fLat,fLng,tLat,tLng,dur,cb){
+  var st=performance.now(),te=document.getElementById('traveler');
+  if(tLng>fLng)te.style.transform='scaleX(1)';else te.style.transform='scaleX(-1)';
+  function step(now){var t=Math.min((now-st)/dur,1);var e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;travelerMarker.setLatLng([fLat+(tLat-fLat)*e,fLng+(tLng-fLng)*e]);if(t<1)travelAnimFrame=requestAnimationFrame(step);else if(cb)cb();}
+  travelAnimFrame=requestAnimationFrame(step);
 }
+function dropFP(lat,lng,label){var fp=L.circleMarker([lat,lng],{radius:3,color:'#6366f1',fillColor:'#6366f1',fillOpacity:0.4,weight:0}).addTo(map);if(label)fp.bindTooltip(label,{permanent:false,direction:'top'});footprints.push(fp);}
+function updateProgress(){var s=stops[currentStopIdx],d=s.startDay+Math.floor(currentPoiIdx/Math.max(s.pois.length,1)*s.nights),p=Math.min(d,TOTAL_DAYS)/TOTAL_DAYS*100;document.getElementById('progressFill').style.width=p+'%';document.getElementById('dayCounter').textContent='Dia '+Math.min(d,TOTAL_DAYS)+' / '+TOTAL_DAYS;var pn=s.pois[Math.min(currentPoiIdx,s.pois.length-1)];document.getElementById('nowPlaying').innerHTML=s.emoji+' '+s.name+' \u2014 '+(pn?pn.name:s.name);document.querySelectorAll('.progress-dot').forEach(function(d,i){d.classList.toggle('reached',i<=currentStopIdx);});}
 
-// ===== MARKER ACTIVATION =====
-function activateMarker(idx) {
-  const stop = stops[idx];
-  const size = stop.nights >= 4 ? 36 : stop.nights >= 2 ? 30 : 26;
-  const el = document.getElementById(`marker-inner-${idx}`);
-  if (el) {
-    el.style.background = stop.color;
-    el.style.borderColor = '#fff';
-    el.style.color = '#fff';
-    el.style.boxShadow = `0 0 12px ${stop.color}88`;
+function advance(){
+  if(!isPlaying)return;var s=stops[currentStopIdx];
+  if(currentPoiIdx<s.pois.length){
+    var poi=s.pois[currentPoiIdx],pLat=currentPoiIdx===0?s.lat:s.pois[currentPoiIdx-1].lat,pLng=currentPoiIdx===0?s.lng:s.pois[currentPoiIdx-1].lng;
+    localTrail.addLatLng([poi.lat,poi.lng]);
+    animateTravel(pLat,pLng,poi.lat,poi.lng,getInterval()*0.7,function(){dropFP(poi.lat,poi.lng,poi.name);updateProgress();currentPoiIdx++;if(isPlaying)animationTimer=setTimeout(advance,getInterval()*0.3);});
+  }else if(currentStopIdx<stops.length-1){
+    var ns=stops[currentStopIdx+1];routeSegments[currentStopIdx].setStyle({opacity:0.8});
+    cards[currentStopIdx].classList.add('visited');cards[currentStopIdx].classList.remove('active');
+    map.flyToBounds(L.latLngBounds([s.lat,s.lng],[ns.lat,ns.lng]).pad(0.3),{duration:0.8});
+    localTrail.setLatLngs([]);document.getElementById('nowPlaying').innerHTML='\u2708\ufe0f Viajando: '+s.name+' \u2192 '+ns.name;
+    setTimeout(function(){animateTravel(s.lat,s.lng,ns.lat,ns.lng,getInterval()*2.5,function(){
+      currentStopIdx++;currentPoiIdx=0;var n=stops[currentStopIdx];activateMarker(currentStopIdx);showInfoCard(n);
+      cards[currentStopIdx].classList.add('active');cards[currentStopIdx].scrollIntoView({behavior:'smooth',block:'center'});
+      map.flyTo([n.lat,n.lng],n.zoom,{duration:1});localTrail.addLatLng([n.lat,n.lng]);updateProgress();
+      if(isPlaying)animationTimer=setTimeout(advance,getInterval()*1.5);
+    });},900);
+  }else{
+    cards[currentStopIdx].classList.add('visited');isPlaying=false;
+    document.getElementById('playBtn').innerHTML='\ud83c\udf89';
+    document.getElementById('nowPlaying').innerHTML='\ud83c\udf89 Viaje completado! 28 dias por Portugal';
+    document.getElementById('progressFill').style.width='100%';document.getElementById('dayCounter').textContent='Dia 28 / 28';
+    map.flyToBounds(routeLine.getBounds().pad(0.1),{duration:1.5});stops.forEach(function(_,i){activateMarker(i);});
   }
 }
 
-// ===== ANIMATION ENGINE =====
-function getInterval() {
-  return 2200 / speeds[speedIdx];
+function togglePlay(){
+  isPlaying=!isPlaying;var btn=document.getElementById('playBtn');
+  if(isPlaying){btn.innerHTML='&#10074;&#10074;';btn.classList.add('active');
+    if(currentStopIdx===0&&currentPoiIdx===0){activateMarker(0);showInfoCard(stops[0]);cards[0].classList.add('active');map.flyTo([stops[0].lat,stops[0].lng],stops[0].zoom,{duration:1});localTrail.addLatLng([stops[0].lat,stops[0].lng]);updateProgress();animationTimer=setTimeout(advance,getInterval()*1.5);}
+    else advance();
+  }else{btn.innerHTML='&#9654;';btn.classList.remove('active');clearTimeout(animationTimer);cancelAnimationFrame(travelAnimFrame);}
 }
-
-function animateTravelBetween(fromLat, fromLng, toLat, toLng, duration, onComplete) {
-  const startTime = performance.now();
-  const travelerEl = document.getElementById('traveler');
-
-  // Flip direction
-  if (toLng > fromLng) {
-    travelerEl.style.transform = 'scaleX(1)';
+function skipStop(dir){clearTimeout(animationTimer);cancelAnimationFrame(travelAnimFrame);jumpToStop(Math.max(0,Math.min(stops.length-1,currentStopIdx+dir)));}
+function jumpToStop(idx){
+  clearTimeout(animationTimer);cancelAnimationFrame(travelAnimFrame);
+  for(var i=0;i<=idx;i++){activateMarker(i);if(i>0&&i-1<routeSegments.length)routeSegments[i-1].setStyle({opacity:0.8});if(i<idx){cards[i].classList.add('visited');cards[i].classList.remove('active');}}
+  currentStopIdx=idx;currentPoiIdx=0;var s=stops[idx];
+  cards.forEach(function(c){c.classList.remove('active');});cards[idx].classList.add('active');cards[idx].scrollIntoView({behavior:'smooth',block:'center'});
+  showInfoCard(s);travelerMarker.setLatLng([s.lat,s.lng]);map.flyTo([s.lat,s.lng],s.zoom,{duration:1});
+  localTrail.setLatLngs([[s.lat,s.lng]]);updateProgress();
+  if(isPlaying)animationTimer=setTimeout(advance,getInterval()*1.5);
+}
+function cycleSpeed(){speedIdx=(speedIdx+1)%speeds.length;document.getElementById('speedBtn').textContent=speeds[speedIdx]+'x';}
+function seekProgress(e){var r=e.currentTarget.getBoundingClientRect(),p=(e.clientX-r.left)/r.width,d=Math.round(p*TOTAL_DAYS),t=0;for(var i=stops.length-1;i>=0;i--)if(d>=stops[i].startDay){t=i;break;}jumpToStop(t);}
+function toggleSidebar(){
+  var sb=document.getElementById('sidebar');
+  if(window.innerWidth<=600){
+    sb.classList.toggle('expanded');
   } else {
-    travelerEl.style.transform = 'scaleX(-1)';
-  }
-
-  function step(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    // Ease in-out
-    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-    const lat = fromLat + (toLat - fromLat) * ease;
-    const lng = fromLng + (toLng - fromLng) * ease;
-    travelerMarker.setLatLng([lat, lng]);
-
-    if (t < 1) {
-      travelAnimFrame = requestAnimationFrame(step);
-    } else {
-      onComplete && onComplete();
-    }
-  }
-  travelAnimFrame = requestAnimationFrame(step);
-}
-
-function dropFootprint(lat, lng, label) {
-  const fp = L.circleMarker([lat, lng], {
-    radius: 3, color: '#a78bfa', fillColor: '#a78bfa',
-    fillOpacity: 0.6, weight: 0, opacity: 0.6
-  }).addTo(map);
-  if (label) fp.bindTooltip(label, { permanent: false, direction: 'top', className: 'footprint-tip' });
-  footprints.push(fp);
-}
-
-function updateProgress() {
-  const stop = stops[currentStopIdx];
-  const dayEstimate = stop.startDay + Math.floor((currentPoiIdx / Math.max(stop.pois.length, 1)) * stop.nights);
-  const pct = (Math.min(dayEstimate, TOTAL_DAYS) / TOTAL_DAYS) * 100;
-
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('dayCounter').textContent = `Dia ${Math.min(dayEstimate, TOTAL_DAYS)} / ${TOTAL_DAYS}`;
-  document.getElementById('nowPlaying').innerHTML =
-    `<span class="emoji">${stop.emoji}</span> ${stop.name} — ${stop.pois[Math.min(currentPoiIdx, stop.pois.length - 1)]?.name || stop.name}`;
-
-  // Progress dots
-  document.querySelectorAll('.progress-dot').forEach((dot, i) => {
-    dot.classList.toggle('reached', i <= currentStopIdx);
-  });
-}
-
-function advanceAnimation() {
-  if (!isPlaying) return;
-  const stop = stops[currentStopIdx];
-
-  if (currentPoiIdx < stop.pois.length) {
-    // Walking within a city
-    const poi = stop.pois[currentPoiIdx];
-    const prevLat = currentPoiIdx === 0 ? stop.lat : stop.pois[currentPoiIdx - 1].lat;
-    const prevLng = currentPoiIdx === 0 ? stop.lng : stop.pois[currentPoiIdx - 1].lng;
-
-    // Update local trail
-    localTrail.addLatLng([poi.lat, poi.lng]);
-
-    animateTravelBetween(prevLat, prevLng, poi.lat, poi.lng, getInterval() * 0.7, () => {
-      dropFootprint(poi.lat, poi.lng, poi.name);
-      updateProgress();
-      currentPoiIdx++;
-      if (isPlaying) animationTimer = setTimeout(advanceAnimation, getInterval() * 0.3);
-    });
-
-  } else if (currentStopIdx < stops.length - 1) {
-    // Travel to next city
-    const nextStop = stops[currentStopIdx + 1];
-    const fromStop = stop;
-
-    // Reveal route segment
-    routeSegments[currentStopIdx].setStyle({ opacity: 0.8 });
-
-    // Mark sidebar card as visited
-    cards[currentStopIdx].classList.add('visited');
-    cards[currentStopIdx].classList.remove('active');
-
-    // Zoom out for travel
-    const bounds = L.latLngBounds(
-      [fromStop.lat, fromStop.lng], [nextStop.lat, nextStop.lng]
-    ).pad(0.3);
-    map.flyToBounds(bounds, { duration: 0.8 });
-
-    // Clear local trail
-    localTrail.setLatLngs([]);
-
-    // Animate travel between cities
-    const travelDuration = getInterval() * 2.5;
-    document.getElementById('nowPlaying').innerHTML =
-      `<span class="emoji">✈️</span> Viajando: ${fromStop.name} → ${nextStop.name}`;
-
-    setTimeout(() => {
-      animateTravelBetween(fromStop.lat, fromStop.lng, nextStop.lat, nextStop.lng, travelDuration, () => {
-        // Arrive at new city
-        currentStopIdx++;
-        currentPoiIdx = 0;
-        const newStop = stops[currentStopIdx];
-
-        activateMarker(currentStopIdx);
-        showInfoCard(newStop);
-        cards[currentStopIdx].classList.add('active');
-        cards[currentStopIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        map.flyTo([newStop.lat, newStop.lng], newStop.zoom, { duration: 1 });
-        localTrail.addLatLng([newStop.lat, newStop.lng]);
-        updateProgress();
-
-        if (isPlaying) animationTimer = setTimeout(advanceAnimation, getInterval() * 1.5);
-      });
-    }, 900);
-
-  } else {
-    // Trip complete!
-    cards[currentStopIdx].classList.add('visited');
-    isPlaying = false;
-    document.getElementById('playBtn').innerHTML = '🎉';
-    document.getElementById('nowPlaying').innerHTML =
-      '<span class="emoji">🎉</span> Viaje completado! 28 dias increibles';
-    document.getElementById('progressFill').style.width = '100%';
-    document.getElementById('dayCounter').textContent = 'Dia 28 / 28';
-    map.flyToBounds(routeLine.getBounds().pad(0.1), { duration: 1.5 });
-
-    // Show all markers fully
-    stops.forEach((_, i) => activateMarker(i));
+    sb.classList.toggle('hidden');
   }
 }
-
-// ===== CONTROLS =====
-function togglePlay() {
-  isPlaying = !isPlaying;
-  const btn = document.getElementById('playBtn');
-
-  if (isPlaying) {
-    btn.innerHTML = '&#10074;&#10074;';
-    btn.classList.add('active');
-
-    // If starting fresh
-    if (currentStopIdx === 0 && currentPoiIdx === 0) {
-      activateMarker(0);
-      showInfoCard(stops[0]);
-      cards[0].classList.add('active');
-      map.flyTo([stops[0].lat, stops[0].lng], stops[0].zoom, { duration: 1 });
-      localTrail.addLatLng([stops[0].lat, stops[0].lng]);
-      updateProgress();
-      animationTimer = setTimeout(advanceAnimation, getInterval() * 1.5);
-    } else {
-      advanceAnimation();
-    }
-  } else {
-    btn.innerHTML = '&#9654;';
-    btn.classList.remove('active');
-    clearTimeout(animationTimer);
-    cancelAnimationFrame(travelAnimFrame);
-  }
-}
-
-function skipStop(dir) {
-  clearTimeout(animationTimer);
-  cancelAnimationFrame(travelAnimFrame);
-
-  const newIdx = Math.max(0, Math.min(stops.length - 1, currentStopIdx + dir));
-  jumpToStop(newIdx);
-}
-
-function jumpToStop(idx) {
-  clearTimeout(animationTimer);
-  cancelAnimationFrame(travelAnimFrame);
-
-  // Activate all markers up to this point
-  for (let i = 0; i <= idx; i++) {
-    activateMarker(i);
-    if (i > 0 && i - 1 < routeSegments.length) routeSegments[i-1].setStyle({ opacity: 0.8 });
-    if (i < idx) { cards[i].classList.add('visited'); cards[i].classList.remove('active'); }
-  }
-
-  currentStopIdx = idx;
-  currentPoiIdx = 0;
-  const stop = stops[idx];
-
-  cards.forEach(c => c.classList.remove('active'));
-  cards[idx].classList.add('active');
-  cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-  showInfoCard(stop);
-  travelerMarker.setLatLng([stop.lat, stop.lng]);
-  map.flyTo([stop.lat, stop.lng], stop.zoom, { duration: 1 });
-
-  localTrail.setLatLngs([[stop.lat, stop.lng]]);
-  updateProgress();
-
-  if (isPlaying) {
-    animationTimer = setTimeout(advanceAnimation, getInterval() * 1.5);
-  }
-}
-
-function cycleSpeed() {
-  speedIdx = (speedIdx + 1) % speeds.length;
-  document.getElementById('speedBtn').textContent = speeds[speedIdx] + 'x';
-}
-
-function seekProgress(e) {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const pct = (e.clientX - rect.left) / rect.width;
-  const targetDay = Math.round(pct * TOTAL_DAYS);
-
-  // Find which stop contains this day
-  let targetIdx = 0;
-  for (let i = stops.length - 1; i >= 0; i--) {
-    if (targetDay >= stops[i].startDay) { targetIdx = i; break; }
-  }
-  jumpToStop(targetIdx);
-}
-
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('hidden');
-}
-
-// ===== INIT =====
-setTimeout(() => {
-  map.fitBounds(routeLine.getBounds().pad(0.1));
-}, 300);
+setTimeout(function(){map.fitBounds(routeLine.getBounds().pad(0.1));},300);
 </script>
 </body>
 </html>
