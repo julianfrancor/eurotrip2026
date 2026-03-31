@@ -335,7 +335,7 @@ stops.forEach(function(stop,idx){
   markers.push(L.marker([stop.lat,stop.lng],{icon:icon}).addTo(map).bindPopup(popup,{maxWidth:280}));
 });
 
-var travelerIcon = L.divIcon({className:'',html:'<div id="traveler" style="font-size:30px;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));transition:transform 0.1s;">\ud83e\uddd1\u200d\ud83c\udf92</div>',iconSize:[34,34],iconAnchor:[17,17]});
+var travelerIcon = L.divIcon({className:'',html:'<div id="traveler" style="font-size:30px;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));transition:transform 0.1s;">🚶🏻‍♂️</div>',iconSize:[34,34],iconAnchor:[17,17]});
 var travelerMarker = L.marker([stops[0].lat,stops[0].lng],{icon:travelerIcon,zIndexOffset:9999}).addTo(map);
 var localTrail = L.polyline([],{color:'#6366f1',weight:2,opacity:0.35,dashArray:'4,6'}).addTo(map);
 var footprints = [];
