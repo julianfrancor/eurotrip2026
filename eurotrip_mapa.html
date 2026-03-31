@@ -210,6 +210,7 @@
 <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()">&#9776;</button>
 <div id="map"></div>
 <div class="info-card" id="infoCard"></div>
+<button id="infoReopen" onclick="reopenInfoCard()" style="display:none;position:fixed;top:80px;right:16px;z-index:999;width:38px;height:38px;border-radius:50%;background:#6366f1;color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(99,102,241,0.4);">i</button>
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Espana</div>
   <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Portugal norte/centro</div>
@@ -350,7 +351,9 @@ stops.forEach(function(stop,idx){
   c.addEventListener('click',function(){jumpToStop(idx);});listEl.appendChild(c);cards.push(c);
 });
 
-function showInfoCard(s){var e=document.getElementById('infoCard');e.innerHTML='<div class="info-card-header" style="background:'+s.color+'08;"><div class="info-card-icon" style="background:'+s.color+'12;font-size:26px;">'+s.emoji+'</div><div><div class="info-card-title">'+s.name+'</div><div class="info-card-sub">'+s.dates+' &middot; '+s.nights+' noches &middot; '+s.country+'</div></div></div><div class="info-card-body"><div class="info-card-row"><b>Hostel:</b> '+s.hostel+'</div><div class="info-card-row"><b>Transporte:</b> '+s.transport+'</div><div style="margin-top:6px;">'+s.activities.map(function(a){return'<span class="info-card-activity">'+a+'</span>';}).join('')+'</div><div class="info-card-highlights">'+s.highlights.map(function(h){return'\u2022 '+h;}).join('<br>')+'</div></div>';e.classList.add('show');}
+function showInfoCard(s){var e=document.getElementById('infoCard');var closeBtn=window.innerWidth<=600?'<button onclick="hideInfoCard()" style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:20px;color:#999;cursor:pointer;line-height:1;padding:4px;">&times;</button>':'';e.innerHTML='<div style="position:relative;">'+closeBtn+'<div class="info-card-header" style="background:'+s.color+'08;"><div class="info-card-icon" style="background:'+s.color+'12;font-size:26px;">'+s.emoji+'</div><div><div class="info-card-title">'+s.name+'</div><div class="info-card-sub">'+s.dates+' &middot; '+s.nights+' noches &middot; '+s.country+'</div></div></div><div class="info-card-body"><div class="info-card-row"><b>Hostel:</b> '+s.hostel+'</div><div class="info-card-row"><b>Transporte:</b> '+s.transport+'</div><div style="margin-top:6px;">'+s.activities.map(function(a){return'<span class="info-card-activity">'+a+'</span>';}).join('')+'</div><div class="info-card-highlights">'+s.highlights.map(function(h){return'\u2022 '+h;}).join('<br>')+'</div></div></div>';e.classList.add('show');var rb=document.getElementById('infoReopen');if(rb)rb.style.display='none';}
+function hideInfoCard(){document.getElementById('infoCard').classList.remove('show');document.getElementById('infoReopen').style.display='flex';}
+function reopenInfoCard(){document.getElementById('infoReopen').style.display='none';showInfoCard(stops[currentStopIdx]);}
 function activateMarker(i){var e=document.getElementById('mi-'+i);if(e){e.style.background=stops[i].color;e.style.borderColor='#fff';e.style.color='#fff';e.style.boxShadow='0 0 10px '+stops[i].color+'55';}}
 function getInterval(){return 2000/speeds[speedIdx];}
 
